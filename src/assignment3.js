@@ -62,7 +62,8 @@ function animate() {
     var samples = fft.getValue();
     renderer.render(scene, camera);
     for (var i in samples) {
-        cubeGroup.children[i].scale.y = samples[i] / 10;
+        //cubeGroup.children[i].scale.y = samples[i] / 10;
+        cubeGroup.children[i].scale.y = THREE.Math.mapLinear(samples[i],-100,10,0,20);
     }
 }
 
