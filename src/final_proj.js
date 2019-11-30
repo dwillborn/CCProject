@@ -9,11 +9,11 @@ var scene = new THREE.Scene();
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 
-var texture = new THREE.Texture();
-texture.image = new THREE.TextureLoader().load('/textures/water.png')
-texture.wrapS = THREE.RepeatWrapping;
-texture.wrapT = THREE.RepeatWrapping;
-texture.repeat.set(4, 4);
+// var texture = new THREE.Texture();
+// texture.image = new THREE.TextureLoader().load('/textures/water.png')
+// texture.wrapS = THREE.RepeatWrapping;
+// texture.wrapT = THREE.RepeatWrapping;
+// texture.repeat.set(4, 4);
 
 function startAudio() {
     Tone.start();
@@ -62,13 +62,13 @@ plane.receiveShadow = true;
 plane.rotateX(-Math.PI / 2);
 scene.add(plane);
 
-var plane2 = new THREE.Mesh(geometry,material);
+var plane2 = new THREE.Mesh(geometry, material);
 plane2.position.y = -1;
 plane2.velocity = new THREE.Vector3(0, 0, 0);
-plane2.receiveShadow = true;
+plane2.receiveShadow = false;
 plane2.rotateX(-Math.PI / 2);
 
-var bgeometry = new THREE.SphereGeometry(1, 20, 20);
+var bgeometry = new THREE.OctahedronGeometry();
 var bmaterial = new THREE.MeshStandardMaterial({ color: 0xff6600 });
 var bmaterial2 = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
 var bmaterial3 = new THREE.MeshStandardMaterial({ color: 0x6600ff });
@@ -109,6 +109,7 @@ function spawnBalls() {
         ball.position.y += 2;
         ball.position.z += THREE.Math.randFloat(-12, 8);
         ball.velocity = new THREE.Vector3(0, 0, 0);
+        ball.rvelocity = new THREE.Vector3(0, 0.05, 0);
         ball.castShadow = true;
         ball.receiveShadow = true;
         ballGroup.add(ball);
@@ -122,7 +123,7 @@ function respawnAll() {
     scene.add(plane2);
 
     plane.position.y = 12.75;
-    plane.material = planeMats[counter%8];
+    plane.material = planeMats[counter % 8];
     plane.velocity = new THREE.Vector3(0, 0.5, 0);
 
     for (var i = 0; i < numBalls; i++) {
@@ -131,6 +132,7 @@ function respawnAll() {
         ball.position.y += 14.75;
         ball.position.z += THREE.Math.randFloat(-12, 8);
         ball.velocity = new THREE.Vector3(0, 0.5, 0);
+        ball.rvelocity = new THREE.Vector3(0, 0.05, 0);
         ball.castShadow = true;
         ball.receiveShadow = true;
         ballGroup.add(ball);
@@ -200,6 +202,10 @@ function animate() {
         vertices[i].z = Math.sin(time + vertices[i].x);
     }
     renderer.render(scene, camera);
+
+    ballGroup.children.forEach(function (ball) {
+        ball.rotation.y += ball.rvelocity.y;
+    });
 
     if (plane.velocity.y > 0) {
         plane.position.y -= plane.velocity.y;
