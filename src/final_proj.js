@@ -15,6 +15,55 @@ var mouse = new THREE.Vector2();
 // texture.wrapT = THREE.RepeatWrapping;
 // texture.repeat.set(4, 4);
 
+var bgSynth = new Tone.FMSynth().toMaster();
+bgSynth.envelope.release = 8;
+bgSynth.envelope.decay = 4;
+var bgSynth1 = new Tone.FMSynth().toMaster();
+bgSynth1.envelope.release = 8;
+bgSynth1.envelope.decay = 4;
+var bgSynth2 = new Tone.FMSynth().toMaster();
+bgSynth2.envelope.release = 8;
+bgSynth2.envelope.decay = 4;
+
+const bgNotes = [
+    "E3",null,"G3",null,"D3",null,"F3",null,"C3",null,"C3",null,"C3",null,"D3",null
+]
+const bgNotes1= [
+    "G3",null,"C4",null,"G3",null,"B3",null,"F3",null,"G3",null,"F3",null,"G3",null
+]
+const bgNotes2= [
+    "C4",null,"E4",null,"B3",null,"D4",null,"A3",null,"E3",null,"A3",null,"B3",null
+]
+
+var currNote = "E3"
+
+const bgPart = new Tone.Sequence(
+    function (time, note) {
+        bgSynth.triggerAttackRelease(note, "10hz", time);
+    },
+    bgNotes,
+    "1n"
+).start();
+
+const bgPart1 = new Tone.Sequence(
+    function (time, note) {
+        bgSynth1.triggerAttackRelease(note, "10hz", time);
+    },
+    bgNotes1,
+    "1n"
+).start();
+
+const bgPart2 = new Tone.Sequence(
+    function (time, note) {
+        if( note != null)
+            currNote = note;
+        bgSynth2.triggerAttackRelease(note, "10hz", time);
+    },
+    bgNotes2,
+    "1n"
+).start();
+
+
 function startAudio() {
     Tone.start();
     container.removeEventListener("mousedown", startAudio);
@@ -30,7 +79,8 @@ var phaser = new Tone.Phaser({
 }).toMaster();
 
 var synth = new Tone.FMSynth().connect(phaser);
-const notes = ["C3", "D3", "E3", "F3", "G3", "A3", "B3"];
+synth.volume.value = -10;
+const objNotes = ["C3", "D3", "E3", "F3", "G3", "A3", "B3"];
 
 
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -170,7 +220,7 @@ function checkSphere(event) {
         if (res && res.object && res.object.velocity.y == 0) {
             selectedObject = res.object;
             selectedObject.velocity.y = 0.05;
-            synth.triggerAttackRelease(notes[Math.floor(Math.random() * notes.length)], "8n");
+            synth.triggerAttackRelease(currNote, "8n");
         }
     }
 }
@@ -188,6 +238,8 @@ var vertices = geometry.vertices;
 for (var i = 0; i < vertices.length; i++) {
     console.log(vertices[i].y)
 }
+
+Tone.Transport.start();
 
 function animate() {
 
