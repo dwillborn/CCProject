@@ -220,7 +220,7 @@ function checkSphere(event) {
         if (res && res.object && res.object.velocity.y == 0) {
             selectedObject = res.object;
             selectedObject.velocity.y = 0.05;
-            synth.triggerAttackRelease(currNote, "8n");
+            synth.triggerAttackRelease(currNote, "16n");
         }
     }
 }
