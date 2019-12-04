@@ -29,7 +29,8 @@ var phaser = new Tone.Phaser({
     "baseFrequency": 1000
 }).toMaster();
 
-var synth = new Tone.FMSynth().connect(phaser);
+var synth = new Tone.Synth();
+synth.connect(phaser);
 const notes = ["C3", "D3", "E3", "F3", "G3", "A3", "B3"];
 
 
