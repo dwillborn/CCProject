@@ -8,12 +8,63 @@ var container = document.getElementById("container");
 var scene = new THREE.Scene();
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
+var score = 0;
 
+document.getElementById('score').innerHTML = score;
 // var texture = new THREE.Texture();
 // texture.image = new THREE.TextureLoader().load('/textures/water.png')
 // texture.wrapS = THREE.RepeatWrapping;
 // texture.wrapT = THREE.RepeatWrapping;
 // texture.repeat.set(4, 4);
+
+var bgSynth = new Tone.FMSynth().toMaster();
+bgSynth.envelope.release = 8;
+bgSynth.envelope.decay = 4;
+var bgSynth1 = new Tone.FMSynth().toMaster();
+bgSynth1.envelope.release = 8;
+bgSynth1.envelope.decay = 4;
+var bgSynth2 = new Tone.FMSynth().toMaster();
+bgSynth2.envelope.release = 8;
+bgSynth2.envelope.decay = 4;
+
+const bgNotes = [
+    "E3", null, "G3", null, "D3", null, "F3", null, "C3", null, "C3", null, "C3", null, "D3", null
+]
+const bgNotes1 = [
+    "G3", null, "C4", null, "G3", null, "B3", null, "F3", null, "G3", null, "F3", null, "G3", null
+]
+const bgNotes2 = [
+    "C4", null, "E4", null, "B3", null, "D4", null, "A3", null, "E3", null, "A3", null, "B3", null
+]
+
+var currNote = "E3"
+
+const bgPart = new Tone.Sequence(
+    function (time, note) {
+        bgSynth.triggerAttackRelease(note, "10hz", time);
+    },
+    bgNotes,
+    "1n"
+).start();
+
+const bgPart1 = new Tone.Sequence(
+    function (time, note) {
+        bgSynth1.triggerAttackRelease(note, "10hz", time);
+    },
+    bgNotes1,
+    "1n"
+).start();
+
+const bgPart2 = new Tone.Sequence(
+    function (time, note) {
+        if (note != null)
+            currNote = note;
+        bgSynth2.triggerAttackRelease(note, "10hz", time);
+    },
+    bgNotes2,
+    "1n"
+).start();
+
 
 function startAudio() {
     Tone.start();
@@ -30,7 +81,10 @@ var phaser = new Tone.Phaser({
 }).toMaster();
 
 var synth = new Tone.FMSynth().connect(phaser);
-const notes = ["C3", "D3", "E3", "F3", "G3", "A3", "B3"];
+synth.volume.value = -10;
+const objNotes = ["C3", "D3", "E3", "F3", "G3", "A3", "B3"];
+
+var badSound = new Tone.PluckSynth().toMaster();
 
 
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -54,7 +108,7 @@ var material5 = new THREE.MeshStandardMaterial({ color: 0xff6600, side: 0 });
 var material6 = new THREE.MeshStandardMaterial({ color: 0x00ff00, side: 0 });
 var material7 = new THREE.MeshStandardMaterial({ color: 0x6600ff, side: 0 });
 var material8 = new THREE.MeshStandardMaterial({ color: 0x000000, side: 0 });
-var planeMats = [material, material2, material3, material4, material5, material6, material7, material8];
+var planeMats = [material, material2, material3, material5, material6, material7];
 
 var plane = new THREE.Mesh(geometry, material);
 plane.velocity = new THREE.Vector3(0, 0, 0);
@@ -77,8 +131,9 @@ var bmaterial5 = new THREE.MeshStandardMaterial({ color: 0x0000ff });
 var bmaterial6 = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 var bmaterial7 = new THREE.MeshStandardMaterial({ color: 0xffff00 });
 var bmaterial8 = new THREE.MeshStandardMaterial({ color: 0xffffff });
-var ballMats = [bmaterial, bmaterial2, bmaterial3, bmaterial4, bmaterial5, bmaterial6, bmaterial7, bmaterial8];
+var ballMats = [bmaterial, bmaterial2, bmaterial3, bmaterial5, bmaterial6, bmaterial7];
 var ballGroup = new THREE.Group();
+//var badBalls = new THREE.Group();
 scene.add(ballGroup);
 
 var clock = new THREE.Clock()
@@ -102,9 +157,22 @@ light.shadow.camera.top = -20;    // default
 light.shadow.camera.bottom = 20;     // default
 
 var numBalls = 15;
+var ballcount = numBalls;
+var numBad = 5;
 function spawnBalls() {
     for (var i = 0; i < numBalls; i++) {
-        var ball = new THREE.Mesh(bgeometry, ballMats[counter % 8]);
+        var ball = new THREE.Mesh(bgeometry, ballMats[counter % 6]);
+        ball.position.x += THREE.Math.randFloat(-10, 10);
+        ball.position.y += 2;
+        ball.position.z += THREE.Math.randFloat(-12, 8);
+        ball.velocity = new THREE.Vector3(0, 0, 0);
+        ball.rvelocity = new THREE.Vector3(0, 0.05, 0);
+        ball.castShadow = true;
+        ball.receiveShadow = true;
+        ballGroup.add(ball);
+    }
+    for (var i = 0; i < numBad; i++) {
+        var ball = new THREE.Mesh(bgeometry, bmaterial4);
         ball.position.x += THREE.Math.randFloat(-10, 10);
         ball.position.y += 2;
         ball.position.z += THREE.Math.randFloat(-12, 8);
@@ -123,11 +191,18 @@ function respawnAll() {
     scene.add(plane2);
 
     plane.position.y = 12.75;
-    plane.material = planeMats[counter % 8];
+    plane.material = planeMats[counter % 6];
     plane.velocity = new THREE.Vector3(0, 0.5, 0);
 
+    
+    ballGroup.children.forEach(function (ball) {
+        if(ball.material.color.getHex() == 0x000000)
+            ballGroup.remove(ball);
+    });
+   
+
     for (var i = 0; i < numBalls; i++) {
-        var ball = new THREE.Mesh(bgeometry, ballMats[counter % 8]);
+        var ball = new THREE.Mesh(bgeometry, ballMats[counter % 6]);
         ball.position.x += THREE.Math.randFloat(-10, 10);
         ball.position.y += 14.75;
         ball.position.z += THREE.Math.randFloat(-12, 8);
@@ -137,6 +212,19 @@ function respawnAll() {
         ball.receiveShadow = true;
         ballGroup.add(ball);
     }
+    for (var i = 0; i < numBad; i++) {
+        var ball = new THREE.Mesh(bgeometry, bmaterial4);
+        ball.position.x += THREE.Math.randFloat(-10, 10);
+        ball.position.y += 14.75;
+        ball.position.z += THREE.Math.randFloat(-12, 8);
+        ball.velocity = new THREE.Vector3(0, 0.5, 0);
+        ball.rvelocity = new THREE.Vector3(0, 0.05, 0);
+        ball.castShadow = true;
+        ball.receiveShadow = true;
+        ballGroup.add(ball);
+    }
+
+    ballcount = numBalls;
 }
 
 var selectedObject = null;
@@ -157,6 +245,8 @@ function handleTouchMove(event) {
     }
 }
 
+//var compareColor = new THREE.Color(0x000000);
+
 function checkSphere(event) {
     event.preventDefault();
     if (selectedObject) {
@@ -170,10 +260,21 @@ function checkSphere(event) {
         if (res && res.object && res.object.velocity.y == 0) {
             selectedObject = res.object;
             selectedObject.velocity.y = 0.05;
-            synth.triggerAttackRelease(notes[Math.floor(Math.random() * notes.length)], "8n");
+            if (selectedObject.material.color.getHex() == 0x000000) {
+                //play sour note
+                badSound.triggerAttackRelease("C3","8n");
+                score -= 300;
+                document.getElementById('score').innerHTML = score;
+            }
+            else {
+                synth.triggerAttackRelease(currNote, "16n");
+                score += 100;
+                document.getElementById('score').innerHTML = score;
+            }
         }
     }
 }
+
 
 var raycaster = new THREE.Raycaster();
 var mouseVector = new THREE.Vector3();
@@ -188,6 +289,8 @@ var vertices = geometry.vertices;
 for (var i = 0; i < vertices.length; i++) {
     console.log(vertices[i].y)
 }
+
+Tone.Transport.start();
 
 function animate() {
 
@@ -231,6 +334,10 @@ function animate() {
                 ball.position.y -= ball.velocity.y;
                 if (ball.position.y < -4) {
                     ballGroup.remove(ball);
+                    if (ball.material.color.getHex() != 0x000000) {
+                        //play sour note
+                        ballcount--;
+                    }
                     console.log(ballGroup.children.length);
                 }
             });
@@ -240,7 +347,7 @@ function animate() {
 
     if (plane.position.y <= 2 && plane2 in scene.children) {
         scene.remove(plane2);
-        plane2.material = planeMats(plane.material);
+        //plane2.material = planeMats(plane.material);
     }
     // if( plane.position.y <= 0){
     //     plane.position.y = 0;
@@ -260,7 +367,7 @@ function animate() {
     //         console.log(ballGroup.children.length);
     //     }
     // });
-    if (ballGroup.children.length == 0) {
+    if (ballcount == 0) {
         counter++;
         respawnAll();
     }
